@@ -91,6 +91,18 @@ public class MainActivity extends Activity {
         Intent intentService = new Intent(this, MyService.class);
         this.startService(intentService);
         startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
+
+        // display metrics // constructor -> service
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        mDensity = metrics.densityDpi;
+        mDisplay = getWindowManager().getDefaultDisplay();
+        // get width and height
+        Point size = new Point();
+        mDisplay.getSize(size);
+        mWidth = size.x;
+        mHeight = size.y;
+        mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 1);
+        mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), null);
     }
 
     @Override
@@ -144,22 +156,12 @@ public class MainActivity extends Activity {
 
     /****************************************** Factoring Virtual Display creation ****************/
     private void createVirtualDisplay() {
-        // display metrics
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        mDensity = metrics.densityDpi;
-        mDisplay = getWindowManager().getDefaultDisplay();
-        // get width and height
-        Point size = new Point();
-        mDisplay.getSize(size);
-        mWidth = size.x;
-        mHeight = size.y;
+
 
         IMAGES_PRODUCED = 0;
         // start capture reader
-        mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
         sMediaProjection = mProjectionManager.getMediaProjection(-1, mdata);
         mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
-        mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), null);
     }
 
     private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
