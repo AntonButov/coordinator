@@ -50,6 +50,98 @@ public class MainActivity extends Activity {
     private int mRotation;
     private OrientationChangeCallback mOrientationChangeCallback;
 
+    /****************************************** Activity Lifecycle methods ************************/
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // call for the projection manager
+        mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
+        // start projection
+        Button startButton = (Button) findViewById(R.id.startButton);
+        startButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                startProjection();
+            }
+        });
+
+        // stop projection
+        Button stopButton = (Button) findViewById(R.id.stopButton);
+        stopButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                stopProjection();
+            }
+        });
+
+        // start capture handling thread
+        new Thread() {
+            @Override
+            public void run() {
+                Looper.prepare();
+                mHandler = new Handler();
+                Looper.loop();
+            }
+        }.start();
+        Intent intentService = new Intent(this, MyService.class);
+        this.startService(intentService);
+       // startProjection();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CODE) {
+            sMediaProjection = mProjectionManager.getMediaProjection(resultCode, data);
+
+            if (sMediaProjection != null) {
+                File externalFilesDir = getExternalFilesDir(null);
+                if (externalFilesDir != null) {
+                    STORE_DIRECTORY = getFilesDir() + "/coninfo/";
+                    File storeDirectory = new File(STORE_DIRECTORY);
+                    if (!storeDirectory.exists()) {
+                        boolean success = storeDirectory.mkdirs();
+                        if (!success) {
+                            Log.e(TAG, "failed to create file storage directory.");
+                            return;
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
+                    return;
+                }
+
+                // display metrics
+                DisplayMetrics metrics = getResources().getDisplayMetrics();
+                mDensity = metrics.densityDpi;
+                mDisplay = getWindowManager().getDefaultDisplay();
+
+                // create virtual display depending on device width / height
+                createVirtualDisplay();
+
+                // register orientation change callback
+                mOrientationChangeCallback = new OrientationChangeCallback(this);
+                if (mOrientationChangeCallback.canDetectOrientation()) {
+                    mOrientationChangeCallback.enable();
+                }
+
+                // register media projection stop callback
+                sMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
+            }
+        }
+    finish();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+      //  finish();
+    }
+
     private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
         @Override
         public void onImageAvailable(ImageReader reader) {
@@ -60,6 +152,7 @@ public class MainActivity extends Activity {
             try {
                 image = reader.acquireLatestImage();
                 if (image != null) {
+                    stopProjection();
                     Image.Plane[] planes = image.getPlanes();
                     ByteBuffer buffer = planes[0].getBuffer();
                     int pixelStride = planes[0].getPixelStride();
@@ -141,90 +234,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    /****************************************** Activity Lifecycle methods ************************/
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // call for the projection manager
-        mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-
-        // start projection
-        Button startButton = (Button) findViewById(R.id.startButton);
-        startButton.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                startProjection();
-            }
-        });
-
-        // stop projection
-        Button stopButton = (Button) findViewById(R.id.stopButton);
-        stopButton.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                stopProjection();
-            }
-        });
-
-        // start capture handling thread
-        new Thread() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                mHandler = new Handler();
-                Looper.loop();
-        }
-        }.start();
-    Intent intentService = new Intent(this, MyService.class);
-    this.startService(intentService);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE) {
-            sMediaProjection = mProjectionManager.getMediaProjection(resultCode, data);
-
-            if (sMediaProjection != null) {
-                File externalFilesDir = getExternalFilesDir(null);
-                if (externalFilesDir != null) {
-                    STORE_DIRECTORY = getFilesDir() + "/coninfo/";
-                    File storeDirectory = new File(STORE_DIRECTORY);
-                    if (!storeDirectory.exists()) {
-                        boolean success = storeDirectory.mkdirs();
-                        if (!success) {
-                            Log.e(TAG, "failed to create file storage directory.");
-                            return;
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
-                    return;
-                }
-
-                // display metrics
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
-                mDensity = metrics.densityDpi;
-                mDisplay = getWindowManager().getDefaultDisplay();
-
-                // create virtual display depending on device width / height
-                createVirtualDisplay();
-
-                // register orientation change callback
-                mOrientationChangeCallback = new OrientationChangeCallback(this);
-                if (mOrientationChangeCallback.canDetectOrientation()) {
-                    mOrientationChangeCallback.enable();
-                }
-
-                // register media projection stop callback
-                sMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
-            }
-        }
-
-     }
 
     /****************************************** UI Widget Callbacks *******************************/
     private void startProjection() {
