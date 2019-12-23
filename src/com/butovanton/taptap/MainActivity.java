@@ -285,4 +285,4 @@ public class MainActivity extends Activity {
             sMediaProjection = null;
         }
     }
-}
+}//+
