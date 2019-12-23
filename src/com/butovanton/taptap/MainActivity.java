@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
     private int mWidth;
     private int mHeight;
     private int mRotation;
-    private OrientationChangeCallback mOrientationChangeCallback;
+    private Intent mdata;
 
     /****************************************** Activity Lifecycle methods ************************/
     @Override
@@ -90,15 +90,14 @@ public class MainActivity extends Activity {
         }.start();
         Intent intentService = new Intent(this, MyService.class);
         this.startService(intentService);
-       // startProjection();
+        startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CODE) {
-            sMediaProjection = mProjectionManager.getMediaProjection(resultCode, data);
+            mdata = data;
 
-            if (sMediaProjection != null) {
                 File externalFilesDir = getExternalFilesDir(null);
                 if (externalFilesDir != null) {
                     STORE_DIRECTORY = getFilesDir() + "/coninfo/";
@@ -114,23 +113,8 @@ public class MainActivity extends Activity {
                     Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
                     return;
                 }
-
-                // display metrics
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
-                mDensity = metrics.densityDpi;
-                mDisplay = getWindowManager().getDefaultDisplay();
-
-                // create virtual display depending on device width / height
-                createVirtualDisplay();
-
-                // register orientation change callback
-              //  mOrientationChangeCallback = new OrientationChangeCallback(this);
-             //   if (mOrientationChangeCallback.canDetectOrientation()) {
-               //     mOrientationChangeCallback.enable();
-
-              //  }
             }
-        }
+        Log.d("DEBUG","end chield");
     }
 
     @Override
@@ -139,34 +123,10 @@ public class MainActivity extends Activity {
       //  finish();
     }
 
-    private class OrientationChangeCallback extends OrientationEventListener {
-
-        OrientationChangeCallback(Context context) {
-            super(context);
-        }
-
-        @Override
-        public void onOrientationChanged(int orientation) {
-            final int rotation = mDisplay.getRotation();
-            if (rotation != mRotation) {
-                mRotation = rotation;
-                try {
-                    // clean up
-                    if (mVirtualDisplay != null) mVirtualDisplay.release();
-                    if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
-
-                    // re-create virtual display depending on device width / height
-                    createVirtualDisplay();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
     /****************************************** UI Widget Callbacks *******************************/
     private void startProjection() {
-        startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
+        createVirtualDisplay();
+        Log.d("DEBUG","Start father");
     }
 
     private void stopProjection() {
@@ -184,14 +144,20 @@ public class MainActivity extends Activity {
 
     /****************************************** Factoring Virtual Display creation ****************/
     private void createVirtualDisplay() {
+        // display metrics
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        mDensity = metrics.densityDpi;
+        mDisplay = getWindowManager().getDefaultDisplay();
         // get width and height
         Point size = new Point();
         mDisplay.getSize(size);
         mWidth = size.x;
         mHeight = size.y;
+
         IMAGES_PRODUCED = 0;
         // start capture reader
         mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
+        sMediaProjection = mProjectionManager.getMediaProjection(-1, mdata);
         mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
         mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), null);
     }
