@@ -262,7 +262,16 @@ public class MainActivity extends Activity {
 
         // start capture reader
         mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
-        mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, mHandler);
+        mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
         mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), mHandler);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (sMediaProjection != null) {
+            sMediaProjection.stop();
+            sMediaProjection = null;
+        }
     }
 }

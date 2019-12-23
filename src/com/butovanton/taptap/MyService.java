@@ -60,6 +60,7 @@ public class MyService extends Service {
     private long maxsdeltatime = 200;
     private Toast toast;
 
+    private static Intent mResultData;
     private Display mDisplay;
     private int mWidth;
     private int mHeight;
@@ -137,6 +138,10 @@ public class MyService extends Service {
             }
         });
         wm.addView(detector, params);
+    }
+
+    public static void setResultData(Intent ResultData) {
+        MyService.mResultData = ResultData;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
