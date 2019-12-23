@@ -127,13 +127,14 @@ public class MainActivity extends Activity {
                 mOrientationChangeCallback = new OrientationChangeCallback(this);
                 if (mOrientationChangeCallback.canDetectOrientation()) {
                     mOrientationChangeCallback.enable();
+
                 }
 
                 // register media projection stop callback
-                sMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
+              //  sMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
             }
         }
-    finish();
+   // finish();
     }
 
     @Override
@@ -145,14 +146,14 @@ public class MainActivity extends Activity {
     private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
         @Override
         public void onImageAvailable(ImageReader reader) {
+            stopProjection();
             Image image = null;
             FileOutputStream fos = null;
             Bitmap bitmap = null;
 
             try {
                 image = reader.acquireLatestImage();
-                if (image != null) {
-                    stopProjection();
+                if (image != null && IMAGES_PRODUCED == 0) {
                     Image.Plane[] planes = image.getPlanes();
                     ByteBuffer buffer = planes[0].getBuffer();
                     int pixelStride = planes[0].getPixelStride();
@@ -228,7 +229,7 @@ public class MainActivity extends Activity {
                     if (mVirtualDisplay != null) mVirtualDisplay.release();
                     if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
                     if (mOrientationChangeCallback != null) mOrientationChangeCallback.disable();
-                    sMediaProjection.unregisterCallback(MediaProjectionStopCallback.this);
+                  //  sMediaProjection.unregisterCallback(MediaProjectionStopCallback.this);
                 }
             });
         }
@@ -253,11 +254,13 @@ public class MainActivity extends Activity {
                       if (sMediaProjection != null) {
                           sMediaProjection.stop();
                       }
+
         if (mVirtualDisplay == null) {
             return;
         }
         mVirtualDisplay.release();
         mVirtualDisplay = null;
+       // readerImage();
     }
 
     /****************************************** Factoring Virtual Display creation ****************/
@@ -267,7 +270,7 @@ public class MainActivity extends Activity {
         mDisplay.getSize(size);
         mWidth = size.x;
         mHeight = size.y;
-
+        IMAGES_PRODUCED = 0;
         // start capture reader
         mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
         mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
