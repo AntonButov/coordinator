@@ -241,15 +241,23 @@ public class MainActivity extends Activity {
     }
 
     private void stopProjection() {
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Log.d("DEBUG","Tread.post");
-                if (sMediaProjection != null) {
-                    sMediaProjection.stop();
-                }
-            }
-        });
+  //      mHandler.post(new Runnable() {
+  //          @Override
+  //          public void run() {
+   //             Log.d("DEBUG","Tread.post");
+  //              if (sMediaProjection != null) {
+  //                  sMediaProjection.stop();
+  //              }
+  //          }
+  //      });
+                      if (sMediaProjection != null) {
+                          sMediaProjection.stop();
+                      }
+        if (mVirtualDisplay == null) {
+            return;
+        }
+        mVirtualDisplay.release();
+        mVirtualDisplay = null;
     }
 
     /****************************************** Factoring Virtual Display creation ****************/
