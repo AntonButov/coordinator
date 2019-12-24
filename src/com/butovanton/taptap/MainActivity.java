@@ -41,7 +41,6 @@ public class MainActivity extends Activity {
 
     private MediaProjectionManager mProjectionManager;
     private ImageReader mImageReader;
-    private Handler mHandler;
     private Display mDisplay;
     private VirtualDisplay mVirtualDisplay;
     private int mDensity;
@@ -97,6 +96,7 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CODE) {
             mdata = data;
+            MyService.setResultData(data);
 
                 File externalFilesDir = getExternalFilesDir(null);
                 if (externalFilesDir != null) {
@@ -127,7 +127,10 @@ public class MainActivity extends Activity {
 
     /****************************************** UI Widget Callbacks *******************************/
     private void startProjection() {
-        createVirtualDisplay();
+        IMAGES_PRODUCED = 0;
+        // start capture reader
+        sMediaProjection = mProjectionManager.getMediaProjection(-1, mdata);
+        mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
         Log.d("DEBUG","Start father");
     }
 
@@ -143,16 +146,6 @@ public class MainActivity extends Activity {
           mVirtualDisplay.release();
           mVirtualDisplay = null;
      }
-
-    /****************************************** Factoring Virtual Display creation ****************/
-    private void createVirtualDisplay() {
-
-
-        IMAGES_PRODUCED = 0;
-        // start capture reader
-        sMediaProjection = mProjectionManager.getMediaProjection(-1, mdata);
-        mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
-    }
 
     private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
         @Override
