@@ -78,18 +78,6 @@ public class MainActivity extends Activity {
                 stopProjection();
             }
         });
-
-        // start capture handling thread
-        new Thread() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                mHandler = new Handler();
-                Looper.loop();
-            }
-        }.start();
-        Intent intentService = new Intent(this, MyService.class);
-        this.startService(intentService);
         startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
 
         // display metrics // constructor -> service
@@ -125,7 +113,9 @@ public class MainActivity extends Activity {
                     Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
                     return;
                 }
-            }
+        Intent intentService = new Intent(this, MyService.class);
+        this.startService(intentService);
+        }
         Log.d("DEBUG","end chield");
     }
 
@@ -186,7 +176,7 @@ public class MainActivity extends Activity {
                     bitmap.copyPixelsFromBuffer(buffer);
 
                     // write bitmap to a file
-                    fos = new FileOutputStream(getFilesDir() + "/coninfo/" + IMAGES_PRODUCED + ".jpg");
+                    fos = new FileOutputStream(getFilesDir() + "/coninfo/" + IMAGES_PRODUCED + ".jpg", true);
                     bitmap.compress(CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
