@@ -1,56 +1,36 @@
-package com.butovanton.taptap;
+package pro.butovanton.coordinator;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
-import android.graphics.drawable.Drawable;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
-import android.media.MediaScannerConnection;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
-import android.provider.Settings;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
-import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
-import android.view.Gravity;
 import android.view.MotionEvent;
-import android.view.OrientationEventListener;
-import android.view.Surface;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import static android.view.View.INVISIBLE;
 
 public class MyService extends Service {
 
@@ -62,10 +42,8 @@ public class MyService extends Service {
     private View detector;
     private View detectorMax;
     private long touchtimepass = 0;
-    //private long touchtimepass2 = 0;
     private long mindeltatime = 100;
-    private long maxsdeltatime = 200;
-    private Toast toast;
+    private long maxsdeltatime = 300;
 
     private static int IMAGES_PRODUCED;
     private static final String SCREENCAP_NAME = "screencap";
@@ -111,23 +89,16 @@ public class MyService extends Service {
         detectorMax.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-               // toast.cancel();
-               // toast.getView().setVisibility(View.GONE);
-
-              //  if (event.getEventTime()-touchtimepass2>1500) {
-              //      touchtimepass2 = 0;
                     Log.d("DEBUG", "Обрабатываем координаты");
                     Log.d("DEBUG", "time: " + event.getEventTime() + ", touch. x=" + event.getX() + ", y=" + event.getY());
                     wm.removeView(detectorMax);
-
                     //Screenshot----------------------------
                     // create virtual display depending on device width / height
                     startProjection();
                     sendNotif(1);
                     //--------------------------------------
-                    Toast toast2 = toast.makeText(getApplicationContext(), "x=" + event.getX() + " y=" + event.getY(), Toast.LENGTH_SHORT);
-                    toast2.show();
-               // }
+                    Toast toast = Toast.makeText(getApplicationContext(), "x=" + event.getX() + " y=" + event.getY(), Toast.LENGTH_SHORT);
+                    toast.show();
                 return false;
             }
         });
@@ -137,11 +108,8 @@ public class MyService extends Service {
             public boolean onTouch(View v, MotionEvent event) {
                 Log.d("DEBUG", "time: "+event.getEventTime()+", touch. x=" + event.getX() + ", y=" + event.getY());
                 if (event.getEventTime()-touchtimepass>=mindeltatime && event.getEventTime()-touchtimepass<=maxsdeltatime){
-                  //  toast = Toast.makeText(getApplicationContext(),"Укажите координаты",Toast.LENGTH_SHORT);
-                 //  toast.show();
                     touchtimepass = 0;
                     sendNotif(2);
-                  //  touchtimepass2 = event.getEventTime();
                     Log.d("DEBUG", "give koordinate");
                     WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                             mWidth,

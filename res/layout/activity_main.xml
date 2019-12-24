@@ -17,10 +17,4 @@
         android:layout_height="wrap_content"
         android:text="@string/stop_recording" />
 
-    <SeekBar
-        android:id="@+id/mindeltaSeek"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1" />
-
 </LinearLayout>

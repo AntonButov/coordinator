@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/taptap3.iml" filepath="$PROJECT_DIR$/taptap3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/coordinator.iml" filepath="$PROJECT_DIR$/coordinator.iml" />
     </modules>
   </component>
 </project>
