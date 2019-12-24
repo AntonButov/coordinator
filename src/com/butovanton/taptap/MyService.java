@@ -46,6 +46,10 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 public class MyService extends Service {
 
 
@@ -60,10 +64,18 @@ public class MyService extends Service {
     private long maxsdeltatime = 200;
     private Toast toast;
 
-    private static Intent mResultData;
+    private static int IMAGES_PRODUCED;
+    private static final String SCREENCAP_NAME = "screencap";
+    private static final int VIRTUAL_DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
+    private static MediaProjection sMediaProjection = null;
+    private ImageReader mImageReader;
     private Display mDisplay;
+    private VirtualDisplay mVirtualDisplay;
+    private int mDensity;
     private int mWidth;
     private int mHeight;
+    public static Intent ResulData;
+    private MediaProjectionManager mProjectionManager = null;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP) //только для Lolli
     @Override
@@ -138,16 +150,93 @@ public class MyService extends Service {
             }
         });
         wm.addView(detector, params);
+
+        mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        mDensity = metrics.densityDpi;
+        // get width and height
+        mDisplay.getSize(size);
+        mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 1);
+        mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), null);
     }
 
-    public static void setResultData(Intent ResultData) {
-        MyService.mResultData = ResultData;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    /****************************************** UI Widget Callbacks *******************************/
     private void startProjection() {
-        Log.d("DEBUG", "startProgection");
+        if (sMediaProjection == null) {
+            IMAGES_PRODUCED = 0;
+            // start capture reader
+            sMediaProjection = mProjectionManager.getMediaProjection(-1, ResulData);
+            mVirtualDisplay = sMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight, mDensity, VIRTUAL_DISPLAY_FLAGS, mImageReader.getSurface(), null, null);
+        }
+        Log.d("DEBUG","Start father");
 
+    }
+
+    private void stopProjection() {
+        if (sMediaProjection != null) {
+            sMediaProjection.stop();
+        }
+        sMediaProjection = null;
+
+        if (mVirtualDisplay == null) {
+            return;
+        }
+        mVirtualDisplay.release();
+        mVirtualDisplay = null;
+    }
+
+    private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            stopProjection();
+            Image image = null;
+            FileOutputStream fos = null;
+            Bitmap bitmap = null;
+
+            try {
+                image = reader.acquireLatestImage();
+                if (image != null && IMAGES_PRODUCED == 0) {
+                    Image.Plane[] planes = image.getPlanes();
+                    ByteBuffer buffer = planes[0].getBuffer();
+                    int pixelStride = planes[0].getPixelStride();
+                    int rowStride = planes[0].getRowStride();
+                    int rowPadding = rowStride - pixelStride * mWidth;
+
+                    // create bitmap
+                    bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
+                    bitmap.copyPixelsFromBuffer(buffer);
+
+                    // write bitmap to a file
+                    fos = new FileOutputStream(getFilesDir() + "/coninfo/" + IMAGES_PRODUCED + ".jpg", true);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+
+                    IMAGES_PRODUCED++;
+                    Log.e("DEBUG", "captured image: " + IMAGES_PRODUCED);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
+
+                if (bitmap != null) {
+                    bitmap.recycle();
+                }
+
+                if (image != null) {
+                    image.close();
+                }
+            }
+        }
+    }
+
+    public static void setResultData(Intent data){
+    MyService.ResulData = data;
     }
 
     @Override
@@ -208,6 +297,11 @@ public class MyService extends Service {
         Log.d("DEBUG",  "service onDestroy");
         wm.removeView(detector);
         if (detectorMax != null) wm.removeView(detectorMax);
+
+        if (sMediaProjection != null) {
+            sMediaProjection.stop();
+            sMediaProjection = null;
+        }
     }
 
 }
