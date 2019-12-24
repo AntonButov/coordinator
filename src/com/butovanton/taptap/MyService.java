@@ -50,6 +50,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import static android.view.View.INVISIBLE;
+
 public class MyService extends Service {
 
 
@@ -60,6 +62,7 @@ public class MyService extends Service {
     private View detector;
     private View detectorMax;
     private long touchtimepass = 0;
+    //private long touchtimepass2 = 0;
     private long mindeltatime = 100;
     private long maxsdeltatime = 200;
     private Toast toast;
@@ -82,7 +85,7 @@ public class MyService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d("DEBUG","service oncreate");
-        sendNotif();
+        sendNotif(1);
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 0,
@@ -108,17 +111,23 @@ public class MyService extends Service {
         detectorMax.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                Log.d("DEBUG", "Обрабатываем координаты");
-                Log.d("DEBUG", "time: "+event.getEventTime()+", touch. x=" + event.getX() + ", y=" + event.getY());
-                wm.removeView(detectorMax);
-                toast.cancel();
-                //Screenshot----------------------------
-                // create virtual display depending on device width / height
-                startProjection();
+               // toast.cancel();
+               // toast.getView().setVisibility(View.GONE);
 
-                //--------------------------------------
-                Toast toast2 = toast.makeText(getApplicationContext(),"x="+event.getX()+" y="+event.getY(),Toast.LENGTH_SHORT);
-                toast2.show();
+              //  if (event.getEventTime()-touchtimepass2>1500) {
+              //      touchtimepass2 = 0;
+                    Log.d("DEBUG", "Обрабатываем координаты");
+                    Log.d("DEBUG", "time: " + event.getEventTime() + ", touch. x=" + event.getX() + ", y=" + event.getY());
+                    wm.removeView(detectorMax);
+
+                    //Screenshot----------------------------
+                    // create virtual display depending on device width / height
+                    startProjection();
+                    sendNotif(1);
+                    //--------------------------------------
+                    Toast toast2 = toast.makeText(getApplicationContext(), "x=" + event.getX() + " y=" + event.getY(), Toast.LENGTH_SHORT);
+                    toast2.show();
+               // }
                 return false;
             }
         });
@@ -128,9 +137,11 @@ public class MyService extends Service {
             public boolean onTouch(View v, MotionEvent event) {
                 Log.d("DEBUG", "time: "+event.getEventTime()+", touch. x=" + event.getX() + ", y=" + event.getY());
                 if (event.getEventTime()-touchtimepass>=mindeltatime && event.getEventTime()-touchtimepass<=maxsdeltatime){
-                    toast = Toast.makeText(getApplicationContext(),"Укажите координаты",Toast.LENGTH_SHORT);
-                    toast.show();
+                  //  toast = Toast.makeText(getApplicationContext(),"Укажите координаты",Toast.LENGTH_SHORT);
+                 //  toast.show();
                     touchtimepass = 0;
+                    sendNotif(2);
+                  //  touchtimepass2 = event.getEventTime();
                     Log.d("DEBUG", "give koordinate");
                     WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                             mWidth,
@@ -206,7 +217,7 @@ public class MyService extends Service {
                     bitmap.copyPixelsFromBuffer(buffer);
 
                     // write bitmap to a file
-                    fos = new FileOutputStream(getFilesDir() + "/coninfo/" + IMAGES_PRODUCED + ".jpg", true);
+                    fos = new FileOutputStream(getFilesDir() + "/coninfo/" + "screenshot" + ".jpg");
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
@@ -245,15 +256,22 @@ public class MyService extends Service {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    public void sendNotif() {
+    public void sendNotif(int Type) {
         createNotificationChannel();
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "7")
                 //     .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setSmallIcon(R.drawable.ic_notif)
                 //  .setTimeoutAfter(1)
                 .setShowWhen(false);
         // .setLights(10000, 1000,1000)
         builder.setContentTitle(getString(R.string.text_notif));
+        switch (Type) {
+            case 1:
+                builder.setSmallIcon(R.drawable.ic_notif);
+                break;
+            case 2:
+                builder.setSmallIcon(R.drawable.ic_notif2);
+                break;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             //  .setContentText("Much longer text that cannot fit one line...")
             // .setVisibility(NotificationCompat.VISIBILITY_SECRET)
