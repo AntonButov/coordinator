@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.RequiresApi;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -43,9 +44,17 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 // запись на диск.
-                Intent intentService = new Intent(getApplicationContext(), MyService.class);
-                startService(intentService);
-                finish();
+              //  Intent intentService = new Intent(getApplicationContext(), MyService.class);
+             //   startService(intentService);
+             //   finish();
+
+                String localUri = "/data/data/pro.butovanton.coordinator/files/coninfo/screenshot.jpg"; //тут уже как хотите так и формируйте путь, хоть через Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + имя файла
+                File file = new File(localUri);
+                Uri contentUri = FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".provider", file);
+                Intent openFileIntent = new Intent(Intent.ACTION_VIEW);
+                openFileIntent.setDataAndTypeAndNormalize(contentUri, "image/*");
+                openFileIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(openFileIntent);
             }
         });
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
