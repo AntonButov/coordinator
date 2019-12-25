@@ -3,6 +3,8 @@ package pro.butovanton.coordinator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
@@ -13,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -23,6 +26,10 @@ public class MainActivity extends Activity {
     private final int OVERLAY_REQUEST = 101;
     private String STORE_DIRECTORY;
     private MediaProjectionManager mProjectionManager;
+    public Intent mdata = null;
+
+    private TextView textView;
+    private Button mbuttonОк;
 
     /****************************************** Activity Lifecycle methods ************************/
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -30,41 +37,32 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // start projection
-        Button startButton = (Button) findViewById(R.id.startButton);
-        startButton.setOnClickListener(new OnClickListener() {
-
+        textView = findViewById(R.id.textView);
+        mbuttonОк = findViewById(R.id.buttonOk);
+        mbuttonОк.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-               // startProjection();
+                // запись на диск.
+                Intent intentService = new Intent(getApplicationContext(), MyService.class);
+                startService(intentService);
+                finish();
             }
         });
-
-        // stop projection
-        Button stopButton = (Button) findViewById(R.id.stopButton);
-        stopButton.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-               // stopProjection();
-            }
-        });
-
-        if (!Settings.canDrawOverlays(this)) {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:" + getPackageName()));
-            startActivityForResult(intent, OVERLAY_REQUEST);
-        }
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_MEDIAPROJECTION);
+        PackageInfo packageInfo;
 
+        try {
+            packageInfo = getPackageManager().getPackageInfo(getPackageName(),0);
+            String ver = packageInfo.versionName ;
+            textView.setText("Версия программы: " + ver);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
             switch (requestCode) {
                 case (OVERLAY_REQUEST): {
 
@@ -72,6 +70,7 @@ public class MainActivity extends Activity {
                 }
                 case (REQUEST_CODE_MEDIAPROJECTION): {
                     MyService.setResultData(data);
+                    mdata = data;
                     File externalFilesDir = getExternalFilesDir(null);
                     if (externalFilesDir != null) {
                         STORE_DIRECTORY = getFilesDir() + "/coninfo/";
@@ -87,19 +86,31 @@ public class MainActivity extends Activity {
                         Log.e("DEBUG", "failed to create file storage directory, getExternalFilesDir is null.");
                         return;
                     }
-                    if (Settings.canDrawOverlays(this)) {
+                    if (resultCode == RESULT_OK) {
                         Intent intentService = new Intent(this, MyService.class);
                         this.startService(intentService);
-                    }
-                        else mFinish();
+                        //finish();
+                    } else mFinish();
                     break;
-
                 }
             }
-        }else {
-           mFinish();
-        }
+
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d("DEBUG", "onResume");
+        if (!Settings.canDrawOverlays(this)) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName()));
+            startActivityForResult(intent, OVERLAY_REQUEST);
+        }
+        if (Settings.canDrawOverlays(this) && mdata == null)
+            startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_MEDIAPROJECTION);
+    }
+
 
     @Override
     protected void onPause() {
