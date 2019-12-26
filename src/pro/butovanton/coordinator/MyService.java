@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
@@ -16,10 +17,13 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.FileProvider;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -28,6 +32,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -58,13 +63,16 @@ public class MyService extends Service {
     public static Intent ResulData;
     private MediaProjectionManager mProjectionManager = null;
 
+    private SharedPreferences msharedPreferences;
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP) //только для Lolli
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d("DEBUG","service oncreate");
+        msharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        msharedPreferences.registerOnSharedPreferenceChangeListener(mListener);
         sendNotif(1);
-
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 0,
                 0,
@@ -185,11 +193,21 @@ public class MyService extends Service {
                     bitmap.copyPixelsFromBuffer(buffer);
 
                     // write bitmap to a file
-                    fos = new FileOutputStream(getFilesDir() + "/coninfo/" + "screenshot" + ".jpg");
+                    String filePatch = getFilesDir() + "/coninfo/" + "screenshot" + ".jpg";
+                    fos = new FileOutputStream(filePatch);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
                     Log.e("DEBUG", "captured image: " + IMAGES_PRODUCED);
+
+                   // String localUri = "/data/data/pro.butovanton.coordinator/files/coninfo/screenshot.jpg"; //тут уже как хотите так и формируйте путь, хоть через Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + имя файла
+                    File file = new File(filePatch);
+                    Uri contentUri = FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".provider", file);
+                    Intent openFileIntent = new Intent(Intent.ACTION_VIEW);
+                    openFileIntent.setDataAndTypeAndNormalize(contentUri, "image/*");
+                    openFileIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    openFileIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(openFileIntent);
                 }
 
             } catch (Exception e) {
@@ -270,6 +288,15 @@ public class MyService extends Service {
         }
     }
 
+    public SharedPreferences.OnSharedPreferenceChangeListener mListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            maxsdeltatime = msharedPreferences.getLong("maxsdeltatime",300);
+            Log.d("DEBUG", "A preference has been changed, maxdelta= "+maxsdeltatime);
+        }
+    };
+
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("DEBUG","service onstart");
@@ -288,6 +315,7 @@ public class MyService extends Service {
             sMediaProjection.stop();
             sMediaProjection = null;
         }
+        msharedPreferences.unregisterOnSharedPreferenceChangeListener(mListener);
     }
 
 }
