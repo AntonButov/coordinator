@@ -1,5 +1,6 @@
 package pro.butovanton.coordinator;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -33,11 +34,12 @@ public class MainActivity extends Activity {
     public Intent mdata = null;
     private SeekBar mseekBar;
 
-    private TextView textView, textViewSeekBar;
+    private TextView textView, textViewSeekBar, textViewPatch;
     private Button mbuttonОк;
 
     private SharedPreferences msharedPreferences;
     /****************************************** Activity Lifecycle methods ************************/
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +47,8 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         textView = findViewById(R.id.textView);
         textViewSeekBar = findViewById(R.id.textseekBar);
-                mbuttonОк = findViewById(R.id.buttonOk);
+        textViewPatch = findViewById(R.id.textViewPatch);
+        mbuttonОк = findViewById(R.id.buttonOk);
         mbuttonОк.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -96,7 +99,7 @@ public class MainActivity extends Activity {
                     mdata = data;
                     File externalFilesDir = getExternalFilesDir(null);
                     if (externalFilesDir != null) {
-                        STORE_DIRECTORY = getFilesDir() + "/coninfo/";
+                        STORE_DIRECTORY = getExternalFilesDir(null) + "/coninfo/";
                         File storeDirectory = new File(STORE_DIRECTORY);
                         if (!storeDirectory.exists()) {
                             boolean success = storeDirectory.mkdirs();
@@ -127,6 +130,7 @@ public class MainActivity extends Activity {
         Log.d("DEBUG", "onResume");
         mseekBar.setProgress((int) msharedPreferences.getLong("maxsdeltatime",300));
         textViewSeekBar.setText("Время между тапами, мс. :"+mseekBar.getProgress());
+        textViewPatch.setText(STORE_DIRECTORY);
         if (!Settings.canDrawOverlays(this)) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:" + getPackageName()));

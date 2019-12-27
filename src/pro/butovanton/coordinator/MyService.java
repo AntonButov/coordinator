@@ -201,13 +201,13 @@ public class MyService extends Service {
                     Log.e("DEBUG", "captured image: " + IMAGES_PRODUCED);
 
                    // String localUri = "/data/data/pro.butovanton.coordinator/files/coninfo/screenshot.jpg"; //тут уже как хотите так и формируйте путь, хоть через Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + имя файла
-                    File file = new File(filePatch);
-                    Uri contentUri = FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".provider", file);
-                    Intent openFileIntent = new Intent(Intent.ACTION_VIEW);
-                    openFileIntent.setDataAndTypeAndNormalize(contentUri, "image/*");
-                    openFileIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    openFileIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(openFileIntent);
+                 //   File file = new File(filePatch);
+                 //   Uri contentUri = FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".provider", file);
+                 //   Intent openFileIntent = new Intent(Intent.ACTION_VIEW);
+                 //   openFileIntent.setDataAndTypeAndNormalize(contentUri, "image/*");
+                 //   openFileIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                 //   openFileIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                 //   startActivity(openFileIntent);
                 }
 
             } catch (Exception e) {
