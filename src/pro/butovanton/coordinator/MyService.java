@@ -15,10 +15,12 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaScannerConnection;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
@@ -193,11 +195,12 @@ public class MyService extends Service {
                     bitmap.copyPixelsFromBuffer(buffer);
 
                     // write bitmap to a file
-                    String filePatch = getFilesDir() + "/coninfo/" + "screenshot" + ".jpg";
+                    String filePatch = msharedPreferences.getString("storedirectory","")+"/screenshot" + ".jpg";
                     fos = new FileOutputStream(filePatch);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
                     IMAGES_PRODUCED++;
+                    MediaScannerConnection.scanFile(getBaseContext(), new String[] {filePatch}, null, null);
                     Log.e("DEBUG", "captured image: " + IMAGES_PRODUCED);
 
                    // String localUri = "/data/data/pro.butovanton.coordinator/files/coninfo/screenshot.jpg"; //тут уже как хотите так и формируйте путь, хоть через Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + имя файла

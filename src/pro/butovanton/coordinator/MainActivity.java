@@ -7,14 +7,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.media.MediaScannerConnection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.RequiresApi;
 import android.support.v4.content.FileProvider;
+import android.support.v4.os.EnvironmentCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -37,6 +40,7 @@ public class MainActivity extends Activity {
     private TextView textView, textViewSeekBar, textViewPatch;
     private Button mbuttonОк;
 
+    File storeDirectory;
     private SharedPreferences msharedPreferences;
     /****************************************** Activity Lifecycle methods ************************/
 
@@ -84,9 +88,10 @@ public class MainActivity extends Activity {
         }
 
         msharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        storeDirectory = Environment.getExternalStoragePublicDirectory("/Coninfo/");
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
             switch (requestCode) {
@@ -97,16 +102,25 @@ public class MainActivity extends Activity {
                 case (REQUEST_CODE_MEDIAPROJECTION): {
                     MyService.setResultData(data);
                     mdata = data;
-                    File externalFilesDir = getExternalFilesDir(null);
-                    if (externalFilesDir != null) {
-                        STORE_DIRECTORY = getExternalFilesDir(null) + "/coninfo/";
-                        File storeDirectory = new File(STORE_DIRECTORY);
+                    storeDirectory.setReadable(true,false);
+                    storeDirectory.setExecutable(true,false);
+                    storeDirectory.setExecutable(true,false);
+                    if (storeDirectory != null) { //File.c
+                        STORE_DIRECTORY = storeDirectory.getPath();
+                        SharedPreferences.Editor editor = msharedPreferences.edit();
+                        editor.putString("storedirectory",STORE_DIRECTORY);
+                        editor.commit();
+
                         if (!storeDirectory.exists()) {
                             boolean success = storeDirectory.mkdirs();
+
                             if (!success) {
                                 Log.e("DEBUG", "failed to create file storage directory.");
                                 return;
+                            } else {
+                                MediaScannerConnection.scanFile(this, new String[] {storeDirectory.toString()}, null, null);
                             }
+
                         }
                     } else {
                         Log.e("DEBUG", "failed to create file storage directory, getExternalFilesDir is null.");
@@ -146,6 +160,7 @@ public class MainActivity extends Activity {
         super.onPause();
         SharedPreferences.Editor editor = msharedPreferences.edit();
         editor.putLong("maxsdeltatime", mseekBar.getProgress());
+       // editor.putString("storedirectory",STORE_DIRECTORY);
         editor.commit();
     }
 
