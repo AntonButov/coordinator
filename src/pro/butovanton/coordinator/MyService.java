@@ -13,6 +13,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaScannerConnection;
@@ -31,6 +32,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewDebug;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -202,6 +204,10 @@ public class MyService extends Service {
                     IMAGES_PRODUCED++;
                     MediaScannerConnection.scanFile(getBaseContext(), new String[] {filePatch}, null, null);
                     Log.e("DEBUG", "captured image: " + IMAGES_PRODUCED);
+                    Log.d("DEBUG", "Rotation = " + mDisplay.getRotation());
+                    ExifInterface exif = new ExifInterface(filePatch);
+                    exif.setAttribute(ExifInterface.TAG_ORIENTATION, Integer.toString(mDisplay.getRotation()));
+                    exif.saveAttributes();
 
                    // String localUri = "/data/data/pro.butovanton.coordinator/files/coninfo/screenshot.jpg"; //тут уже как хотите так и формируйте путь, хоть через Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + имя файла
                  //   File file = new File(filePatch);

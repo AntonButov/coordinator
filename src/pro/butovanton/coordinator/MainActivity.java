@@ -102,9 +102,6 @@ public class MainActivity extends Activity {
                 case (REQUEST_CODE_MEDIAPROJECTION): {
                     MyService.setResultData(data);
                     mdata = data;
-                    storeDirectory.setReadable(true,false);
-                    storeDirectory.setExecutable(true,false);
-                    storeDirectory.setExecutable(true,false);
                     if (storeDirectory != null) { //File.c
                         STORE_DIRECTORY = storeDirectory.getPath();
                         SharedPreferences.Editor editor = msharedPreferences.edit();
