@@ -1,5 +1,6 @@
 package pro.butovanton.coordinator;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -16,6 +17,8 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v4.os.EnvironmentCompat;
 import android.util.Log;
@@ -32,6 +35,8 @@ public class MainActivity extends Activity {
 
     private final int REQUEST_CODE_MEDIAPROJECTION = 100;
     private final int OVERLAY_REQUEST = 101;
+    private final int STORAGE_REQUEST = 102;
+
     private String STORE_DIRECTORY;
     private MediaProjectionManager mProjectionManager;
     public Intent mdata = null;
@@ -57,8 +62,8 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 // запись на диск.
-                Intent intentService = new Intent(getApplicationContext(), MyService.class);
-                startService(intentService);
+             //   Intent intentService = new Intent(getApplicationContext(), MyService.class);
+             //   startService(intentService);
                 finish();
             }
         });
@@ -144,11 +149,33 @@ public class MainActivity extends Activity {
         textViewPatch.setText(STORE_DIRECTORY);
         if (!Settings.canDrawOverlays(this)) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName()));
+            Uri.parse("package:" + getPackageName()));
             startActivityForResult(intent, OVERLAY_REQUEST);
         }
-        if (Settings.canDrawOverlays(this) & mdata == null)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED) {
+               ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},STORAGE_REQUEST);
+        }
+        if (Settings.canDrawOverlays(this) && mdata == null &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)==PackageManager.PERMISSION_GRANTED)
             startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE_MEDIAPROJECTION);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case STORAGE_REQUEST: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                } else {
+                    mFinish();
+                }
+                return;
+            }
+            // other 'case' lines to check for other
+            // permissions this app might request.
+        }
     }
 
 

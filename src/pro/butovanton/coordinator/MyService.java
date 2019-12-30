@@ -37,8 +37,11 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 
 public class MyService extends Service {
@@ -107,9 +110,15 @@ public class MyService extends Service {
                     //Screenshot----------------------------
                     // create virtual display depending on device width / height
                     startProjection();
-                    sendNotif(1);
+                try {
+                    saveCoordFile((int)event.getX(),(int)event.getY());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.d("DEBUG","Не удалось сохранить координаты: "+e);
+                }
+                sendNotif(1);
                     //--------------------------------------
-                    Toast toast = Toast.makeText(getApplicationContext(), "x=" + event.getX() + " y=" + event.getY(), Toast.LENGTH_SHORT);
+                    Toast toast = Toast.makeText(getApplicationContext(), "x=" + (int)event.getX() + " y=" + (int)event.getY(), Toast.LENGTH_SHORT);
                     toast.show();
                 return false;
             }
@@ -239,6 +248,15 @@ public class MyService extends Service {
                 }
             }
         }
+    }
+
+    private void saveCoordFile(int x, int y) throws IOException {
+       String filePatch = msharedPreferences.getString("storedirectory","");
+       File file = new File(filePatch, "tapinfo.txt");
+       OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(file));
+       MediaScannerConnection.scanFile(getBaseContext(), new String[] {file.getPath()}, null, null);
+       outputStreamWriter.write("X"+x+"Y"+y);
+       outputStreamWriter.close();
     }
 
     public static void setResultData(Intent data){
